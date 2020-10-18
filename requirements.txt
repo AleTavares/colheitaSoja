@@ -1,0 +1,7 @@
+bs4
+PyPDF2
+selenium
+PyPDF2
+requests
+pandas
+tabula

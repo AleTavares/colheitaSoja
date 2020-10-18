@@ -5,6 +5,7 @@ um PDF e são separados em relatórios semanais.
 
 Seu desafio consiste em obter os dados das últimas duas safras e garantir que os dados
 da nova safra sejam obtidos automaticamente após as novas publicações.
+
 Link do site: http://www.imea.com.br/imea-site/relatorios-mercado-detalhe?c=4&s=8
 
 # Resultado esperado:
