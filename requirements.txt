@@ -5,3 +5,4 @@ PyPDF2
 requests
 pandas
 tabula
+psycopg2

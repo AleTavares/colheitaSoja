@@ -1,11 +1,11 @@
 from PyPDF2 import PdfFileReader
-import coletaLinkPDFSoja as pdfSoja
 import pandas as pd
 from tabula import read_pdf
 import re
+import os
 import bancoDados as bd
 
-#função para limpar sujeira coluna Nordeste
+# Função para limpar sujeira coluna Nordeste
 def limpaValores(strLimpar):
     if "/" in strLimpar:
         arrTemp = strLimpar.split('/')
@@ -16,13 +16,13 @@ def limpaValores(strLimpar):
     else:
         retorno = strLimpar
     return retorno
+# Função para ajustar as datas
 def ajustaData(strData):
     mes = {
         'jan': '1',
         'fev': '2',
         'mar': '3',
         'abr': '4',
-        'mai': '5',
         'jun': '6',
         'jul': '7',
         'ago': '8',
@@ -35,33 +35,41 @@ def ajustaData(strData):
     dataAjustada = '20'+arrData[2] + '-' + mes[arrData[1]] + '-' + arrData[0]
     return dataAjustada
 
-# Funcção para processar arquivos PDF
+# Função para processar arquivos PDF
 def processaPDF():
-    pdfurls = pdfSoja.scrapingPDF()
-    # Pega a primeira linha do Dataframe, pois o ultimo publicado acumula os dados
-    tabelaComum = read_pdf(pdfurls[0])
-
+    # Lê PDF com hitorico de colheita
+    tabelaComum = read_pdf('colheita18_19.pdf')
+    
     # Tranforma os dados gerados do PDF em um DataFrame
     dfSoja = pd.DataFrame(tabelaComum[0])
-    dfSoja.pop('Unnamed: 0')
+    
+    # apaga as linhas com sujeira
+    dfSoja = dfSoja.dropna()
+
+    # Retira Caracter % e troca virgula por ponto
     for coluna in dfSoja.columns:
         dfSoja[coluna] = dfSoja[coluna].apply(lambda x : str(x).replace("%", ""))
         dfSoja[coluna] = dfSoja[coluna].apply(lambda x : str(x).replace(",", "."))
-    dfSoja['Regiões do IMEA Centro-Sul'] = dfSoja['Regiões do IMEA Centro-Sul'].apply(lambda x : str(x).replace("10/jan", ""))
-    
-    new = dfSoja["Regiões do IMEA Centro-Sul"].str.split(" ", n = 1, expand = True)
-    dfSoja['data'] = new[0]
-    dfSoja['Centro-Sul'] = new[1]
-    dfSoja.pop('Regiões do IMEA Centro-Sul')
-    
-    # Apaga as 6 ultimalinhas geradas para limpar o dataframe
-    dfSoja = dfSoja.apply(lambda x: x.head(-6)).reset_index(0, drop=True) 
-    dfSoja['data'] = dfSoja['data'].apply(ajustaData)
-    
+
+    # separa colunas que vieram unidas
+    new = dfSoja["Norte Oeste"].str.split(" ", n = 1, expand = True)
+    dfSoja['Norte'] = new[0]
+    dfSoja['Oeste'] = new[1]
+    dfSoja.pop('Norte Oeste')
+
+    # Apaga as 2 ultimalinhas geradas para limpar o dataframe
+    dfSoja = dfSoja.apply(lambda x: x.head(-2)).reset_index(0, drop=True) 
+    dfSoja = dfSoja.iloc[1:]
+    dfSoja['Regiões do IMEA'] = dfSoja['Regiões do IMEA'].apply(ajustaData)
+
     # Retira coluna gerada com sujeira
-    dfSoja['Nordeste'] = dfSoja['Nordeste'].map(limpaValores)
+    dfSoja['Norte'] = dfSoja['Norte'].map(limpaValores)
     
-    df_unpivoted = dfSoja.melt(id_vars=['data', ], var_name='regioesIMEA', value_name='percentual')
+    # Unpivota dados
+    df_unpivoted = dfSoja.melt(id_vars=['Regiões do IMEA', ], var_name='regioesIMEA', value_name='percentual')
+    df_unpivoted.columns = ['data',  'regioesIMEA', 'percentual']
+    
+    #insere dados novos na base
     sql = "insert into soja.producaoSoja(\
                     datacotacao, \
                     regioesimea, \
@@ -88,3 +96,5 @@ def processaPDF():
         bd.con.commit()
     bd.con.close()
     print(df_unpivoted)
+
+processaPDF()

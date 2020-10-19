@@ -27,3 +27,17 @@ Tableau;
 - Docker;
 - SQLAlchemy (Python);
 - GitHub Actions para CI/CD.
+
+# Guia de Instalação
+- Clonar o Repositorio
+- Criar uma instancia de postgre e rodar o script script/bancoDados.sql
+- iniciar o shell e entrar na pasta colonada e instalar as bibliotecas necessárioas:
+    - pip install -r requirements.txt
+
+- criar as variaveis de ambiente:
+    - pgServerJB -> recebe o endereo do servidor do Postgre 
+    - pgBaseJB -> recebe o nome da base de dados 
+    - pgUserJB -> recebe o nome do usuario pra conexão com o banco de dados
+    - pgPassJB -> recebe a senha do usuario para conexão com o banco de dados
+
+- agendar para rodar o arquivo main.py 1 vez por semana
